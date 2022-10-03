@@ -1,4 +1,5 @@
 # Sets up a security group. Creates instances, target groups and elastic load balancers.
+import time
 
 import boto3
 from botocore.exceptions import ClientError
@@ -7,8 +8,28 @@ from botocore.exceptions import ClientError
 EC2_CLIENT = boto3.client('ec2')
 EC2_RESOURCE = boto3.resource('ec2')
 ELB_CLIENT = boto3.client('elbv2')
+SSM_CLIENT = boto3.client('ssm')
 SN_ALL = EC2_CLIENT.describe_subnets()  # Obtain a list of all subnets
 N_SUBNETS = len(SN_ALL['Subnets'])  # Obtain amount of subnets
+USERDATA_SCRIPT = """#!/bin/bash
+mkdir flask_application && cd flask_application
+pip install Flask
+
+cat << EOF > flask_app.py
+#!/usr/bin/python
+from flask import Flask
+app = Flask(__name__)
+
+@app.route('/')
+def my_app():
+    return 'Worked!'
+EOF
+
+chmod 755 flask_app.py
+
+export flask_application=flask_app.py
+flask run
+"""
 
 
 # Function to create {num_instances} amount of {instance_type} instances
@@ -27,7 +48,7 @@ def create_ec2(num_instances, instance_type):
             # we use the security group id just created above.
             SubnetId=SN_ALL['Subnets'][i % N_SUBNETS]['SubnetId'],
             # we distribute instances evenly across all subnets
-
+            UserData=USERDATA_SCRIPT,
             TagSpecifications=[
                 {
                     'ResourceType': 'instance',
@@ -118,6 +139,10 @@ try:
     print(f'Successfully created security group {security_group_id}')
     sec_group_rules = [
         {'IpProtocol': 'tcp',
+         'FromPort': 22,
+         'ToPort': 22,
+         'IpRanges': [{'CidrIp': '0.0.0.0/0'}]},
+        {'IpProtocol': 'tcp',
          'FromPort': 80,
          'ToPort': 80,
          'IpRanges': [{'CidrIp': '0.0.0.0/0'}]},
@@ -142,7 +167,7 @@ except ClientError as e:
         print(e)
         exit(1)
 
-# Create a instances with the created security group rules
+# Create an instances with the created security group rules
 print('CREATING INSTANCES ASSOCIATED WITH THE SECURITY GROUP')
 m4_num_instances = 3  # number of instances to create
 m4_instance_type = 't2.nano'  # change to m4.large
@@ -157,3 +182,8 @@ m4_group_arn = create_tg(m4_group_name, vpc_id, m4_instances)
 print('CREATING LOAD BALANCER AND ATTACHING IT TO M4 TARGET GROUP')
 m4_elb_name = 'm4-load-balancer'
 create_elb(m4_elb_name, m4_group_arn)
+
+# print('DELETE LOAD BALANCER')
+# ELB_CLIENT.delete_load_balancer(LoadBalancerArn=m4_group_arn)
+# print('STOPPING INSTANCES')
+# EC2_CLIENT.terminate_instances(InstanceIds=[i.id for i in m4_instances])
