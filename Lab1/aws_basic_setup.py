@@ -1,6 +1,4 @@
 # Sets up a security group. Creates instances, target groups and elastic load balancers.
-import time
-
 import boto3
 from botocore.exceptions import ClientError
 
@@ -11,27 +9,44 @@ ELB_CLIENT = boto3.client('elbv2')
 SSM_CLIENT = boto3.client('ssm')
 SN_ALL = EC2_CLIENT.describe_subnets()  # Obtain a list of all subnets
 N_SUBNETS = len(SN_ALL['Subnets'])  # Obtain amount of subnets
+M4_NUM_INSTANCES = 4            #number of M4 instances to create 
+T2_NUM_INSTANCES = 5            #number of T2 instances to create
+# create key pair (probably not necessary)
+# key_name = 'vockey'
+# try:
+#     KEY_PAIR = EC2_CLIENT.create_key_pair(KeyName=key_name)
+# except ClientError:
+#     KEY_PAIR= key_name
+
 USERDATA_SCRIPT = """#!/bin/bash
 apt update && \
-    apt install python3 pip && \
-    mkdir flask_application && \
-    cd flask_application
+    apt install -y python3 python3-flask pip && \
+    mkdir /root/flask_application
 
-pip install Flask
+pip install ec2_metadata
 
-cat << EOF > flask_app.py
+cat << EOF > /root/flask_application/my_app.py
 #!/usr/bin/python
 from flask import Flask
+from ec2_metadata import ec2_metadata
 app = Flask(__name__)
 
 @app.route('/')
 def my_app():
-    return 'Instance number INSTANCE_ID_PLACEHOLDER is responding now!'
+    return 'Instance id-' + ec2_metadata.instance_id + ' is telling you to use /cluster1 or /cluster2'
+
+@app.route('/cluster1')
+def my_app1():
+    return 'Instance id-' + ec2_metadata.instance_id + ' is responding now!'
+
+@app.route('/cluster2')
+def my_app2():
+    return 'Instance id-' + ec2_metadata.instance_id + ' is responding now!'
 EOF
 
-chmod 755 flask_app.py
-
-flask --app flask_app.py run --host 0.0.0.0 --port 80
+chmod 755 my_app.py
+export FLASK_APP=/root/flask_application/my_app.py
+flask run --host 0.0.0.0 --port 80
 """
 
 
@@ -46,6 +61,8 @@ def create_ec2(num_instances, instance_type, sg_id):
             MinCount=1,
             MaxCount=1,
             InstanceType=instance_type,
+            Monitoring={'Enabled':True},
+            # KeyName=KEY_PAIR,
             # we will change accordingly (t2.nano is free for testing purposes)
             SecurityGroupIds=[sg_id],
             # we use the security group id just created above.
@@ -58,7 +75,7 @@ def create_ec2(num_instances, instance_type, sg_id):
                     'Tags': [
                         {
                             'Key': 'Name',
-                            'Value': instance_type + '-lab1-ec2-instance-' + str(i + 1)
+                            'Value': 'lab1-ec2-instance-' + str(i + 1)
                         },
                     ]
                 },
@@ -98,7 +115,7 @@ def create_tg(
 
 # Function to create a elastic load balancer called {elb_name} and attach it to target group with arn {tg_arn}
 # Returns ___
-def create_elb(elb_name, tg_arn):
+def create_elb(elb_name, tg1_arn, tg2_arn, sg_id):
     subnet_ids = []
     for i in range(N_SUBNETS):
         subnet_ids.append(SN_ALL['Subnets'][i]['SubnetId'])
@@ -108,19 +125,84 @@ def create_elb(elb_name, tg_arn):
         Subnets=subnet_ids,
         Scheme='internet-facing',
         Type='application',
+        SecurityGroups=[sg_id],
         IpAddressType='ipv4'
     )
 
     # Attach ELB to Target Group
-    response = ELB_CLIENT.create_listener(
+    listener = ELB_CLIENT.create_listener(
         DefaultActions=[{
-            'TargetGroupArn': tg_arn,
-            'Type': 'forward',
+            'Type': 'fixed-response',
+            'FixedResponseConfig': {
+                    'MessageBody': 'Please use /cluster1 or /cluster2',
+                    'StatusCode': '503',
+                    'ContentType': 'text/plain'
+                }  
         }, ],
         LoadBalancerArn=elb['LoadBalancers'][0]['LoadBalancerArn'],
         Port=80,
         Protocol='HTTP',
     )
+    # response = ELB_CLIENT.create_listener(
+    #     DefaultActions=[{
+    #         'TargetGroupArn': tg2_arn,
+    #         'Type': 'forward',
+    #     }, ],
+    #     LoadBalancerArn=elb['LoadBalancers'][0]['LoadBalancerArn'],
+    #     Port=80,
+    #     Protocol='HTTP',
+    # )
+
+    response = ELB_CLIENT.create_rule(
+        ListenerArn=listener['Listeners'][0]['ListenerArn'],
+        Priority=1,
+        Actions=[
+            {
+                'Type': 'forward',
+                'TargetGroupArn':tg1_arn,
+            }
+        ],
+        Conditions=[
+            {
+            'Field': 'path-pattern',
+            'Values': ['/cluster1']
+            }
+        ]
+    )
+    
+    response = ELB_CLIENT.create_rule(
+        ListenerArn=listener['Listeners'][0]['ListenerArn'],
+        Priority=2,
+        Actions=[
+            {
+                'Type': 'forward',
+                'TargetGroupArn':tg2_arn,
+            }
+        ],
+        Conditions=[
+            {
+            'Field': 'path-pattern',
+            'Values': ['/cluster2']
+            }
+        ]
+    )
+
+    # response = ELB_CLIENT.create_rule(
+    #     ListenerArn=elb['LoadBalancers'][0]['LoadBalancerArn'],
+    #     Priority=3,
+    #     Actions=[
+    #         {
+    #             'Type': 'fixed-response',
+    #             'FixedResponseConfig': {
+    #                 'MessageBody': 'Please use /cluster1 or /cluster2',
+    #                 'StatusCode': '503',
+    #                 'ContentType': 'text/plain'
+    #             }   
+    #         }
+    #     ]
+    # )
+    
+    
     return
 
 
@@ -170,21 +252,33 @@ except ClientError as e:
         print(e)
         exit(1)
 
-# Create an instances with the created security group rules
-print('CREATING INSTANCES ASSOCIATED WITH THE SECURITY GROUP')
-m4_num_instances = 3  # number of instances to create
+# Create instances with the created security group rules
+print('CREATING M4 INSTANCES ASSOCIATED WITH THE SECURITY GROUP')
 m4_instance_type = 't2.nano'  # change to m4.large
-m4_instances = create_ec2(m4_num_instances, m4_instance_type, security_group_id)
+m4_instances = create_ec2(M4_NUM_INSTANCES, m4_instance_type, security_group_id)
 
-# Create a target group for the instances created
+# Create instances with the created security group rules
+print('CREATING T2 INSTANCES ASSOCIATED WITH THE SECURITY GROUP')
+t2_instance_type = 't2.micro'  # change to t2.xlarge
+t2_instances = create_ec2(T2_NUM_INSTANCES, t2_instance_type, security_group_id)
+
+# Create a target group for the M4 instances created
 print('CREATING A TARGET GROUP FOR THE M4 INSTANCES AND REGISTERING THEM')
 m4_group_name = 'm4-Group'
 m4_group_arn = create_tg(m4_group_name, vpc_id, m4_instances)
 
-# Create a load balancer for the target group created
-print('CREATING LOAD BALANCER AND ATTACHING IT TO M4 TARGET GROUP')
-m4_elb_name = 'm4-load-balancer'
-create_elb(m4_elb_name, m4_group_arn)
+
+# Create a target group for the T2 instances created
+print('CREATING A TARGET GROUP FOR THE T2 INSTANCES AND REGISTERING THEM')
+t2_group_name = 't2-Group'
+t2_group_arn = create_tg(t2_group_name, vpc_id, t2_instances)
+
+# Create a load balancer for the target groups created
+print('CREATING LOAD BALANCER AND ATTACHING IT TO M4 and T2 TARGET GROUPS')
+elb_name = 'Lab1-load-balancer'
+create_elb(elb_name, m4_group_arn, t2_group_arn, security_group_id)
+
+#metrics analysis etc...
 
 # print('DELETE LOAD BALANCER')
 # ELB_CLIENT.delete_load_balancer(LoadBalancerArn=m4_group_arn)
