@@ -12,7 +12,11 @@ SSM_CLIENT = boto3.client('ssm')
 SN_ALL = EC2_CLIENT.describe_subnets()  # Obtain a list of all subnets
 N_SUBNETS = len(SN_ALL['Subnets'])  # Obtain amount of subnets
 USERDATA_SCRIPT = """#!/bin/bash
-mkdir flask_application && cd flask_application
+apt update && \
+    apt install python3 pip && \
+    mkdir flask_application && \
+    cd flask_application
+
 pip install Flask
 
 cat << EOF > flask_app.py
@@ -22,19 +26,18 @@ app = Flask(__name__)
 
 @app.route('/')
 def my_app():
-    return 'Worked!'
+    return 'Instance number INSTANCE_ID_PLACEHOLDER is responding now!'
 EOF
 
 chmod 755 flask_app.py
 
-export flask_application=flask_app.py
-flask run
+flask --app flask_app.py run --host 0.0.0.0 --port 80
 """
 
 
 # Function to create {num_instances} amount of {instance_type} instances
 # Returns a list of instance objects
-def create_ec2(num_instances, instance_type):
+def create_ec2(num_instances, instance_type, sg_id):
     instances = []
     for i in range(num_instances):
         instances.append(EC2_RESOURCE.create_instances(
@@ -44,11 +47,11 @@ def create_ec2(num_instances, instance_type):
             MaxCount=1,
             InstanceType=instance_type,
             # we will change accordingly (t2.nano is free for testing purposes)
-            SecurityGroupIds=[security_group_id],
+            SecurityGroupIds=[sg_id],
             # we use the security group id just created above.
             SubnetId=SN_ALL['Subnets'][i % N_SUBNETS]['SubnetId'],
             # we distribute instances evenly across all subnets
-            UserData=USERDATA_SCRIPT,
+            UserData=USERDATA_SCRIPT.replace('INSTANCE_ID_PLACEHOLDER', str(i + 1)),
             TagSpecifications=[
                 {
                     'ResourceType': 'instance',
@@ -162,7 +165,7 @@ except ClientError as e:
                 dict(Name='group-name', Values=[sec_group_name])
             ])
         security_group_id = response['SecurityGroups'][0]['GroupId']
-        print(e)
+        print(f'Security group already exists with id {security_group_id}.')
     except ClientError as e:
         print(e)
         exit(1)
@@ -171,7 +174,7 @@ except ClientError as e:
 print('CREATING INSTANCES ASSOCIATED WITH THE SECURITY GROUP')
 m4_num_instances = 3  # number of instances to create
 m4_instance_type = 't2.nano'  # change to m4.large
-m4_instances = create_ec2(m4_num_instances, m4_instance_type)
+m4_instances = create_ec2(m4_num_instances, m4_instance_type, security_group_id)
 
 # Create a target group for the instances created
 print('CREATING A TARGET GROUP FOR THE M4 INSTANCES AND REGISTERING THEM')
