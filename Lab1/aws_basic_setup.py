@@ -9,8 +9,8 @@ ELB_CLIENT = boto3.client('elbv2')
 SSM_CLIENT = boto3.client('ssm')
 SN_ALL = EC2_CLIENT.describe_subnets()  # Obtain a list of all subnets
 N_SUBNETS = len(SN_ALL['Subnets'])  # Obtain amount of subnets
-M4_NUM_INSTANCES = 4            #number of M4 instances to create 
-T2_NUM_INSTANCES = 5            #number of T2 instances to create
+M4_NUM_INSTANCES = 1            #number of M4 instances to create 
+T2_NUM_INSTANCES = 1            #number of T2 instances to create
 # create key pair (probably not necessary)
 # key_name = 'vockey'
 # try:
@@ -98,7 +98,7 @@ def create_tg(
         VpcId=vpc_id
     )
     targ_grp_arn = elb_response['TargetGroups'][0]['TargetGroupArn']
-
+    
     print('Waiting for instance(s) to start running...')
     for instance in instances:
         instance.wait_until_running()
@@ -143,15 +143,6 @@ def create_elb(elb_name, tg1_arn, tg2_arn, sg_id):
         Port=80,
         Protocol='HTTP',
     )
-    # response = ELB_CLIENT.create_listener(
-    #     DefaultActions=[{
-    #         'TargetGroupArn': tg2_arn,
-    #         'Type': 'forward',
-    #     }, ],
-    #     LoadBalancerArn=elb['LoadBalancers'][0]['LoadBalancerArn'],
-    #     Port=80,
-    #     Protocol='HTTP',
-    # )
 
     response = ELB_CLIENT.create_rule(
         ListenerArn=listener['Listeners'][0]['ListenerArn'],
@@ -186,23 +177,6 @@ def create_elb(elb_name, tg1_arn, tg2_arn, sg_id):
             }
         ]
     )
-
-    # response = ELB_CLIENT.create_rule(
-    #     ListenerArn=elb['LoadBalancers'][0]['LoadBalancerArn'],
-    #     Priority=3,
-    #     Actions=[
-    #         {
-    #             'Type': 'fixed-response',
-    #             'FixedResponseConfig': {
-    #                 'MessageBody': 'Please use /cluster1 or /cluster2',
-    #                 'StatusCode': '503',
-    #                 'ContentType': 'text/plain'
-    #             }   
-    #         }
-    #     ]
-    # )
-    
-    
     return
 
 
@@ -278,7 +252,18 @@ print('CREATING LOAD BALANCER AND ATTACHING IT TO M4 and T2 TARGET GROUPS')
 elb_name = 'Lab1-load-balancer'
 create_elb(elb_name, m4_group_arn, t2_group_arn, security_group_id)
 
-#metrics analysis etc...
+# metrics analysis
+# see the second file. We just need the instances ids and the target group ids.
+instance_ids = [instance.id for instance in m4_instances]
+instance_ids.extend([instance.id for instance in t2_instances])
+with open("instance_ids.txt", "w") as f:
+    f.write("\n".join(instance_ids))
+    print("Wrote instance ids to instance_ids.txt")
+
+tg_ids = [t2_group_arn.split(':')[-1], m4_group_arn.split(':')[-1]]
+with open("tg_ids.txt", "w") as f:
+    f.write("\n".join(tg_ids))
+    print("Wrote target groups ids to tg_ids.txt")
 
 # print('DELETE LOAD BALANCER')
 # ELB_CLIENT.delete_load_balancer(LoadBalancerArn=m4_group_arn)
