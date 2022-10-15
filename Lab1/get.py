@@ -6,6 +6,7 @@ from botocore.exceptions import ClientError
 
 ELBV2_CLIENT = boto3.client('elbv2')
 
+
 def retrieve_elb_dns():
     try:
         response = ELBV2_CLIENT.describe_load_balancers()
@@ -23,8 +24,10 @@ def call_endpoint_http(load_balancer_url, cluster):
 
 
 def print_benchmark_stats(stats):
-    cluster1_ids, cluster1_counts = np.unique([s.split('Instance ')[1].split(' is ')[0] for s in stats["cluster1"]["responses"]], return_counts=True)
-    cluster2_ids, cluster2_counts = np.unique([s.split('Instance ')[1].split(' is ')[0] for s in stats["cluster2"]["responses"]], return_counts=True)
+    cluster1_ids, cluster1_counts = np.unique(
+        [s.split('Instance ')[1].split(' is ')[0] for s in stats["cluster1"]["responses"]], return_counts=True)
+    cluster2_ids, cluster2_counts = np.unique(
+        [s.split('Instance ')[1].split(' is ')[0] for s in stats["cluster2"]["responses"]], return_counts=True)
     print("\n/cluster1 :")
     for i in range(len(cluster1_ids)):
         print(f"{cluster1_ids[i]} answered successfully {cluster1_counts[i]} requests")
@@ -34,6 +37,7 @@ def print_benchmark_stats(stats):
         print(f"{cluster2_ids[i]} answered successfully {cluster2_counts[i]} requests")
     print(f"Total successful requests : {sum(cluster2_counts)}")
 
+
 stats = {
     "cluster1": {
         "responses": []
@@ -42,7 +46,6 @@ stats = {
         "responses": []
     }
 }
-
 
 load_balancer_dns_name = retrieve_elb_dns()
 load_balancer_url = f"http://{load_balancer_dns_name}"

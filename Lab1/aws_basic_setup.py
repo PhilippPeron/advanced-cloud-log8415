@@ -1,16 +1,8 @@
-# Sets up a security group. Creates instances, target groups and elastic load balancers.
+# Sets up a security group. Create instances, target groups and elastic load balancers.
 import boto3
+import aws_constants
 from botocore.exceptions import ClientError
 
-# Global variables
-EC2_CLIENT = boto3.client('ec2')
-EC2_RESOURCE = boto3.resource('ec2')
-ELB_CLIENT = boto3.client('elbv2')
-SSM_CLIENT = boto3.client('ssm')
-SN_ALL = EC2_CLIENT.describe_subnets()  # Obtain a list of all subnets
-N_SUBNETS = len(SN_ALL['Subnets'])  # Obtain amount of subnets
-M4_NUM_INSTANCES = 1            #number of M4 instances to create 
-T2_NUM_INSTANCES = 1            #number of T2 instances to create
 # create key pair (probably not necessary)
 # key_name = 'vockey'
 # try:
@@ -61,7 +53,7 @@ def create_ec2(num_instances, instance_type, sg_id):
             MinCount=1,
             MaxCount=1,
             InstanceType=instance_type,
-            Monitoring={'Enabled':True},
+            Monitoring={'Enabled': True},
             # KeyName=KEY_PAIR,
             # we will change accordingly (t2.nano is free for testing purposes)
             SecurityGroupIds=[sg_id],
@@ -91,18 +83,18 @@ def create_tg(
         group_name,
         vpc_id,
         instances):
-    elb_response = ELB_CLIENT.create_target_group(
+    elb_response = aws_constants.ELB_CLIENT.create_target_group(
         Name=group_name,
         Protocol='HTTP',
         Port=80,
         VpcId=vpc_id
     )
     targ_grp_arn = elb_response['TargetGroups'][0]['TargetGroupArn']
-    
+
     print('Waiting for instance(s) to start running...')
     for instance in instances:
         instance.wait_until_running()
-        response = ELB_CLIENT.register_targets(
+        response = aws_constants.ELB_CLIENT.register_targets(
             TargetGroupArn=targ_grp_arn,
             Targets=[
                 {
@@ -113,14 +105,14 @@ def create_tg(
     return targ_grp_arn
 
 
-# Function to create a elastic load balancer called {elb_name} and attach it to target group with arn {tg_arn}
+# Function to create an elastic load balancer called {elb_name} and attach it to target group with arn {tg_arn}
 # Returns ___
 def create_elb(elb_name, tg1_arn, tg2_arn, sg_id):
     subnet_ids = []
-    for i in range(N_SUBNETS):
-        subnet_ids.append(SN_ALL['Subnets'][i]['SubnetId'])
+    for i in range(aws_constants.N_SUBNETS):
+        subnet_ids.append(aws_constants.SN_ALL['Subnets'][i]['SubnetId'])
 
-    elb = ELB_CLIENT.create_load_balancer(
+    elb = aws_constants.ELB_CLIENT.create_load_balancer(
         Name=elb_name,
         Subnets=subnet_ids,
         Scheme='internet-facing',
@@ -130,50 +122,50 @@ def create_elb(elb_name, tg1_arn, tg2_arn, sg_id):
     )
 
     # Attach ELB to Target Group
-    listener = ELB_CLIENT.create_listener(
+    listener = aws_constants.ELB_CLIENT.create_listener(
         DefaultActions=[{
             'Type': 'fixed-response',
             'FixedResponseConfig': {
-                    'MessageBody': 'Please use /cluster1 or /cluster2',
-                    'StatusCode': '503',
-                    'ContentType': 'text/plain'
-                }  
+                'MessageBody': 'Please use /cluster1 or /cluster2',
+                'StatusCode': '503',
+                'ContentType': 'text/plain'
+            }
         }, ],
         LoadBalancerArn=elb['LoadBalancers'][0]['LoadBalancerArn'],
         Port=80,
         Protocol='HTTP',
     )
 
-    response = ELB_CLIENT.create_rule(
+    response = aws_constants.ELB_CLIENT.create_rule(
         ListenerArn=listener['Listeners'][0]['ListenerArn'],
         Priority=1,
         Actions=[
             {
                 'Type': 'forward',
-                'TargetGroupArn':tg1_arn,
+                'TargetGroupArn': tg1_arn,
             }
         ],
         Conditions=[
             {
-            'Field': 'path-pattern',
-            'Values': ['/cluster1']
+                'Field': 'path-pattern',
+                'Values': ['/cluster1']
             }
         ]
     )
-    
-    response = ELB_CLIENT.create_rule(
+
+    response = aws_constants.ELB_CLIENT.create_rule(
         ListenerArn=listener['Listeners'][0]['ListenerArn'],
         Priority=2,
         Actions=[
             {
                 'Type': 'forward',
-                'TargetGroupArn':tg2_arn,
+                'TargetGroupArn': tg2_arn,
             }
         ],
         Conditions=[
             {
-            'Field': 'path-pattern',
-            'Values': ['/cluster2']
+                'Field': 'path-pattern',
+                'Values': ['/cluster2']
             }
         ]
     )
@@ -181,13 +173,13 @@ def create_elb(elb_name, tg1_arn, tg2_arn, sg_id):
 
 
 # get our virtual cloud id
-vpc_response = EC2_CLIENT.describe_vpcs()
+vpc_response = aws_constants.EC2_CLIENT.describe_vpcs()
 vpc_id = vpc_response.get('Vpcs', [{}])[0].get('VpcId', '')
 
 print('CREATING SECURITY GROUP')
 sec_group_name = 'lab1-security-group'
 try:
-    response = EC2_CLIENT.create_security_group(
+    response = aws_constants.EC2_CLIENT.create_security_group(
         GroupName=sec_group_name,
         Description='Security group for the ec2 instances used in Lab1',
         VpcId=vpc_id
@@ -211,12 +203,12 @@ try:
          'IpRanges': [{'CidrIp': '0.0.0.0/0'}]}
         # TODO maybe we should add ssh redirection ?
     ]
-    data = EC2_CLIENT.authorize_security_group_ingress(GroupId=security_group_id,
+    data = aws_constants.EC2_CLIENT.authorize_security_group_ingress(GroupId=security_group_id,
                                                        IpPermissions=sec_group_rules)
     print(f'Successfully updated security group rules with : {sec_group_rules}')
 except ClientError as e:
     try:  # if security group exists already, find the security group id
-        response = EC2_CLIENT.describe_security_groups(
+        response = aws_constants.EC2_CLIENT.describe_security_groups(
             Filters=[
                 dict(Name='group-name', Values=[sec_group_name])
             ])
@@ -229,18 +221,17 @@ except ClientError as e:
 # Create instances with the created security group rules
 print('CREATING M4 INSTANCES ASSOCIATED WITH THE SECURITY GROUP')
 m4_instance_type = 't2.nano'  # change to m4.large
-m4_instances = create_ec2(M4_NUM_INSTANCES, m4_instance_type, security_group_id)
+m4_instances = create_ec2(aws_constants.M4_NUM_INSTANCES, m4_instance_type, security_group_id)
 
 # Create instances with the created security group rules
 print('CREATING T2 INSTANCES ASSOCIATED WITH THE SECURITY GROUP')
 t2_instance_type = 't2.micro'  # change to t2.xlarge
-t2_instances = create_ec2(T2_NUM_INSTANCES, t2_instance_type, security_group_id)
+t2_instances = create_ec2(aws_constants.T2_NUM_INSTANCES, t2_instance_type, security_group_id)
 
 # Create a target group for the M4 instances created
 print('CREATING A TARGET GROUP FOR THE M4 INSTANCES AND REGISTERING THEM')
 m4_group_name = 'm4-Group'
 m4_group_arn = create_tg(m4_group_name, vpc_id, m4_instances)
-
 
 # Create a target group for the T2 instances created
 print('CREATING A TARGET GROUP FOR THE T2 INSTANCES AND REGISTERING THEM')
