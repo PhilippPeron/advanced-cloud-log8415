@@ -38,35 +38,36 @@ def print_benchmark_stats(stats):
     print(f"Total successful requests : {sum(cluster2_counts)}")
 
 
-stats = {
-    "cluster1": {
-        "responses": []
-    },
-    "cluster2": {
-        "responses": []
+def main():
+    stats = {
+        "cluster1": {
+            "responses": []
+        },
+        "cluster2": {
+            "responses": []
+        }
     }
-}
 
-load_balancer_dns_name = retrieve_elb_dns()
-load_balancer_url = f"http://{load_balancer_dns_name}"
+    load_balancer_dns_name = retrieve_elb_dns()
+    load_balancer_url = f"http://{load_balancer_dns_name}"
 
-n_requests = 1000
-for i in range(n_requests):
-    try:
-        print(f"Making request #{i} to cluster 1...")
-        sc_1, resp_1 = call_endpoint_http(load_balancer_url, "cluster1")
-        if sc_1 == 200:
-            stats["cluster1"]["responses"].append(resp_1)
-    except Exception as e:
-        print("An error occured while making a request to cluster 1")
-        print(e)
-    try:
-        print(f"Making request #{i} to cluster 2...")
-        sc_2, resp_2 = call_endpoint_http(load_balancer_url, "cluster2")
-        if sc_2 == 200:
-            stats["cluster2"]["responses"].append(resp_2)
-    except Exception as e:
-        print("An error occured while making a request to cluster 2")
-        print(e)
+    n_requests = 1000
+    for i in range(n_requests):
+        try:
+            print(f"Making request #{i} to cluster 1...")
+            sc_1, resp_1 = call_endpoint_http(load_balancer_url, "cluster1")
+            if sc_1 == 200:
+                stats["cluster1"]["responses"].append(resp_1)
+        except Exception as e:
+            print("An error occured while making a request to cluster 1")
+            print(e)
+        try:
+            print(f"Making request #{i} to cluster 2...")
+            sc_2, resp_2 = call_endpoint_http(load_balancer_url, "cluster2")
+            if sc_2 == 200:
+                stats["cluster2"]["responses"].append(resp_2)
+        except Exception as e:
+            print("An error occured while making a request to cluster 2")
+            print(e)
 
-print_benchmark_stats(stats)
+    print_benchmark_stats(stats)
