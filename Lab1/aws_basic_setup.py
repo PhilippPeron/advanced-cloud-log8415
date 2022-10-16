@@ -114,7 +114,7 @@ def create_tg(
 
 
 # Function to create a elastic load balancer called {elb_name} and attach it to target group with arn {tg_arn}
-# Returns ___
+# Returns load balancer's arn
 def create_elb(elb_name, tg1_arn, tg2_arn, sg_id):
     subnet_ids = []
     for i in range(N_SUBNETS):
@@ -177,7 +177,7 @@ def create_elb(elb_name, tg1_arn, tg2_arn, sg_id):
             }
         ]
     )
-    return
+    return elb['LoadBalancers'][0]['LoadBalancerArn']
 
 
 # get our virtual cloud id
@@ -250,7 +250,7 @@ t2_group_arn = create_tg(t2_group_name, vpc_id, t2_instances)
 # Create a load balancer for the target groups created
 print('CREATING LOAD BALANCER AND ATTACHING IT TO M4 and T2 TARGET GROUPS')
 elb_name = 'Lab1-load-balancer'
-create_elb(elb_name, m4_group_arn, t2_group_arn, security_group_id)
+elb_arn = create_elb(elb_name, m4_group_arn, t2_group_arn, security_group_id)
 
 # metrics analysis
 # see the second file. We just need the instances ids and the target group ids.
@@ -265,6 +265,18 @@ with open("tg_ids.txt", "w") as f:
     f.write("\n".join(tg_ids))
     print("Wrote target groups ids to tg_ids.txt")
 
+# Wait for load balancer to be up and running
+print('WAITING FOR LOAD BALANCER TO BE AVAILABLE')
+waiter = ELB_CLIENT.get_waiter('load_balancer_available')
+waiter.wait(
+    LoadBalancerArns=[elb_arn],
+    WaiterConfig={
+        'Delay': 10,
+        'MaxAttempts': 100
+    }
+    )
+    
+print('LOAD BALANCER IS NOW AVAILABLE')
 # print('DELETE LOAD BALANCER')
 # ELB_CLIENT.delete_load_balancer(LoadBalancerArn=m4_group_arn)
 # print('STOPPING INSTANCES')
