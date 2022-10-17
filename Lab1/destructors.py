@@ -51,15 +51,3 @@ def delete_target_groups(target_groups_arn=None):
             TargetGroupArn=target_group_arn
         )
         print('DELETE TARGET GROUP with ARN: ' + target_group_arn)
-
-
-def delete_security_groups(security_groups_ids=None):
-    if security_groups_ids is None:
-        security_groups_ids = []
-
-    for security_group_id in security_groups_ids:
-        aws_constants.EC2_CLIENT.delete_security_group(
-            GroupId=security_group_id
-        )
-        print('DELETE SECURITY GROUP with ID: ' + security_group_id)
-
