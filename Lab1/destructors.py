@@ -1,4 +1,5 @@
 import aws_constants
+from botocore.exceptions import WaiterError
 
 INSTANCE_STATE_NAME_QUERY_FIELD = 'instance-state-name'
 INSTANCE_STATE_NAME_RUNNING_VALUE = 'running'
@@ -32,6 +33,14 @@ def delete_load_balancers(load_balancer_arn=None):
         aws_constants.ELB_CLIENT.delete_load_balancer(
             LoadBalancerArn=curr_lb_arn
         )
+        waiter = aws_constants.ELB_CLIENT.get_waiter('load_balancers_deleted')
+        waiter.wait(
+            LoadBalancerArns=[curr_lb_arn],
+            WaiterConfig={
+                'Delay': 10,
+                'MaxAttempts': 100
+            }
+        )
     print(response)
 
 
@@ -40,10 +49,10 @@ def delete_target_groups(target_groups_arn=None):
         target_groups_arn = []
 
     for target_group_arn in target_groups_arn:
-        print('DELETE TARGET GROUP with ARN: ' + target_group_arn)
         aws_constants.ELB_CLIENT.delete_target_group(
             TargetGroupArn=target_group_arn
         )
+        print('DELETE TARGET GROUP with ARN: ' + target_group_arn)
 
 
 def delete_security_groups(security_groups_ids=None):
@@ -51,7 +60,8 @@ def delete_security_groups(security_groups_ids=None):
         security_groups_ids = []
 
     for security_group_id in security_groups_ids:
-        print('DELETE SECURITY GROUP with ID: ' + security_group_id)
         aws_constants.EC2_CLIENT.delete_security_group(
             GroupId=security_group_id
         )
+        print('DELETE SECURITY GROUP with ID: ' + security_group_id)
+

@@ -5,6 +5,7 @@ import aws_constants
 import get
 import destructors
 import cloudwatch
+import time
 
 # create key pair (probably not necessary)
 # key_name = 'vockey'
@@ -218,12 +219,12 @@ except ClientError as e:
 
 # Create instances with the created security group rules
 print('CREATING M4 INSTANCES ASSOCIATED WITH THE SECURITY GROUP')
-m4_instance_type = 't2.nano'  # change to m4.large
+m4_instance_type = 'm4.large'
 m4_instances = create_ec2(aws_constants.M4_NUM_INSTANCES, m4_instance_type, security_group_id)
 
 # Create instances with the created security group rules
 print('CREATING T2 INSTANCES ASSOCIATED WITH THE SECURITY GROUP')
-t2_instance_type = 't2.micro'  # TODO change to t2.xlarge
+t2_instance_type = 't2.large'
 t2_instances = create_ec2(aws_constants.T2_NUM_INSTANCES, t2_instance_type, security_group_id)
 
 # Create a target group for the M4 instances created
@@ -270,9 +271,14 @@ waiter.wait(
 print('LOAD BALANCER IS NOW AVAILABLE')
 
 get.main()
-cloudwatch.main(instance_ids) # TODO check why images dont show up correctly
+cloudwatch.main(instance_ids)
 
+#TODO to uncomment when we have the metrics analysis
 destructors.delete_load_balancers([elb_arn])
-destructors.delete_target_groups([m4_group_arn, t2_group_arn])
 destructors.terminate_running_instances(instance_ids)
-destructors.delete_security_groups([security_group_id]) # todo - this is not working
+time.sleep(5)  # wait for the instances to be terminated before deleting the target groups
+destructors.delete_target_groups([m4_group_arn, t2_group_arn])
+
+# TODO to uncomment when it works
+# time.sleep(5)  # wait for the target groups to be deleted before deleting the security group
+# destructors.delete_security_groups([security_group_id])
