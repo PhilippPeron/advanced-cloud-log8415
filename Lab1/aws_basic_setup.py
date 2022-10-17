@@ -1,18 +1,10 @@
 # Sets up a security group. Create instances, target groups and elastic load balancers.
-import boto3
 from botocore.exceptions import ClientError
 import aws_constants
 import get
 import destructors
 import cloudwatch
 import time
-
-# create key pair (probably not necessary)
-# key_name = 'vockey'
-# try:
-#     KEY_PAIR = EC2_CLIENT.create_key_pair(KeyName=key_name)
-# except ClientError:
-#     KEY_PAIR= key_name
 
 USERDATA_SCRIPT = """#!/bin/bash
 apt update && \
@@ -271,7 +263,7 @@ waiter.wait(
 print('LOAD BALANCER IS NOW AVAILABLE')
 
 get.main()
-cloudwatch.main(instance_ids)
+cloudwatch.main(instance_ids, tg_ids)
 
 #TODO to uncomment when we have the metrics analysis
 destructors.delete_load_balancers([elb_arn])
