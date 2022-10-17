@@ -61,9 +61,3 @@ def main(instances_ids, tg_ids):
 
     save_metric(metric_cpu_usage_all_instances, "cpu_usage_all_instances.png")
     save_metric(metric_requests_per_tg, "requests_per_tg.png")
-
-with open("instance_ids.txt", "r") as f:
-    instance_ids = f.read().splitlines()
-with open("tg_ids.txt", "r") as f:
-    tg_ids = f.read().splitlines()
-main(instance_ids, tg_ids)
