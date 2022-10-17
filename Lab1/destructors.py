@@ -15,7 +15,6 @@ def terminate_running_instances(instances_ids):
     terminate_instances_responses = aws_constants.EC2_CLIENT.terminate_instances(
         InstanceIds=instances_ids,
     )
-    print(terminate_instances_responses)
 
 
 def delete_load_balancers(load_balancer_arn=None):
