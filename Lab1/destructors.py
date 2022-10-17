@@ -41,7 +41,6 @@ def delete_load_balancers(load_balancer_arn=None):
                 'MaxAttempts': 100
             }
         )
-    print(response)
 
 
 def delete_target_groups(target_groups_arn=None):
