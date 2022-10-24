@@ -263,6 +263,8 @@ get.main()
 cloudwatch.main(instance_ids, tg_ids)
 
 destructors.delete_load_balancers([elb_arn])
-destructors.terminate_running_instances(instance_ids)
+all_instances = [instance for instance in m4_instances]
+all_instances.extend(t2_instances)
+destructors.terminate_running_instances(instance_ids, all_instances)
 time.sleep(5)  # wait for the instances to be terminated before deleting the target groups
 destructors.delete_target_groups([m4_group_arn, t2_group_arn])

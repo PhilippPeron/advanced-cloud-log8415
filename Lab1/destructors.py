@@ -10,11 +10,13 @@ DESCRIBE_LB_LB_KEY = 'LoadBalancers'
 LB_ARN_DICT_KEY = 'LoadBalancerArn'
 
 
-def terminate_running_instances(instances_ids):
+def terminate_running_instances(instances_ids, all_instances):
     print('STOPPING INSTANCES WITH IDs : ' + str(instances_ids))
     terminate_instances_responses = aws_constants.EC2_CLIENT.terminate_instances(
         InstanceIds=instances_ids,
     )
+    for instance in all_instances:
+        instance.wait_until_terminated()
 
 
 def delete_load_balancers(load_balancer_arn=None):
