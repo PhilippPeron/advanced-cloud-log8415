@@ -41,6 +41,16 @@ while [[ $SSH_IS_NOT_RUNNING -eq 1 ]]; do
     fi
 done
 
+
+# What is done here :
+#    - Clone our public repo that contains our MapReduce algorithm, the dataset, and the hadoop installation script
+#    - Install hadoop and configure it properly
+#    - Compile our MapReduce to a jar file
+#    - Create an input directory in hadoop filesystem with hdfs
+#    - Unzip the dataset, and copy it to this input directory
+#    - Run our MapReduce with hadoop on our dataset
+#    - List the outputted files (located in the output folder)
+#    - Print them to the terminal
 ssh -o "StrictHostKeyChecking no" -i "$PRIVATE_KEY_FILE" ubuntu@"$INSTANCE_IP" '
     set -x && \
     git clone https://github.com/PhilippPeron/advanced-cloud-log8415.git source_code && \
