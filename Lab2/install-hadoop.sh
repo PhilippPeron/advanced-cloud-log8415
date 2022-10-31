@@ -1,6 +1,6 @@
 #!/bin/sh
 
-sudo apt update -y && sudo apt install -y openjdk-11-jre-headless openjdk-11-jdk-headless
+sudo apt update -y && sudo apt install -y openjdk-11-jre-headless openjdk-11-jdk-headless unzip
 wget --progress=bar:force:noscroll https://dlcdn.apache.org/hadoop/common/hadoop-3.3.4/hadoop-3.3.4.tar.gz
 echo "Unpacking..."
 tar -xf hadoop-3.3.4.tar.gz
