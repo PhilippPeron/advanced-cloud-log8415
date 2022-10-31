@@ -147,5 +147,10 @@ instance.wait_until_running()
 # Get the instance's IP
 instance_ip = retrieve_instance_ip(instance.id)
 
+with open('env_variables.txt', 'w+') as f:
+    f.write(f'INSTANCE_IP={instance_ip}\n')
+    f.write(f'PRIVATE_KEY_FILE={private_key_filename}\n')
+print('Wrote instance\'s IP and private key filename to env_variables.txt')
+
 print(f'Instance {instance.id} started. Access it with \'ssh -i {private_key_filename} ubuntu@{instance_ip}\'')
 
