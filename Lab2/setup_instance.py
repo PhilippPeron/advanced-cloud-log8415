@@ -104,6 +104,7 @@ def create_key_pair(key_name, private_key_filename):
         key_name (str): key name
         private_key_filename (str): filename to save the private key to
     """
+    # TODO check if the key already exists distantlx
     print(f'Creating {private_key_filename}')
     if path.exists(private_key_filename):
         print(f'Private key {private_key_filename} already exists, use this file.')
