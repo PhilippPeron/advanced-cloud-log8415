@@ -14,7 +14,6 @@ import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
-import org.example.FriendRecommendation;
 
 public class MapReduce {
     static public class FriendCountWritable implements Writable {
@@ -49,7 +48,7 @@ public class MapReduce {
         }
     }
     public static class TokenizerMapper
-            extends Mapper<LongWritable, Text, LongWritable, FriendRecommendation.FriendCountWritable>{
+            extends Mapper<LongWritable, Text, LongWritable, FriendCountWritable>{
         @Override
         public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
             String[] line = value.toString().split("\t");
@@ -61,14 +60,14 @@ public class MapReduce {
                 for (String friendId : friendsIds) {
                     Long friendIdParsed = Long.parseLong(friendId);
                     friendsIdsParsed.add(friendIdParsed);
-                    context.write(new LongWritable(currUser), new FriendRecommendation.FriendCountWritable(friendIdParsed, -1L));
+                    context.write(new LongWritable(currUser), new FriendCountWritable(friendIdParsed, -1L));
                 }
 
                 for (int i = 0; i < friendsIdsParsed.size(); i++) {
                     for (int j = i + 1; j < friendsIdsParsed.size(); j++) {
                         // for each current user friends combination, set currentUser as mutual friend to both
-                        context.write(new LongWritable(friendsIdsParsed.get(i)), new FriendRecommendation.FriendCountWritable((friendsIdsParsed.get(j)), currUser));
-                        context.write(new LongWritable(friendsIdsParsed.get(j)), new FriendRecommendation.FriendCountWritable((friendsIdsParsed.get(i)), currUser));
+                        context.write(new LongWritable(friendsIdsParsed.get(i)), new FriendCountWritable((friendsIdsParsed.get(j)), currUser));
+                        context.write(new LongWritable(friendsIdsParsed.get(j)), new FriendCountWritable((friendsIdsParsed.get(i)), currUser));
                     }
                 }
             }
@@ -76,15 +75,15 @@ public class MapReduce {
     }
 
     public static class IntSumReducer
-            extends Reducer<LongWritable, FriendRecommendation.FriendCountWritable, LongWritable, Text> {
+            extends Reducer<LongWritable, FriendCountWritable, LongWritable, Text> {
         @Override
-        public void reduce(LongWritable key, Iterable<FriendRecommendation.FriendCountWritable> values, Context context)
+        public void reduce(LongWritable key, Iterable<FriendCountWritable> values, Context context)
                 throws IOException, InterruptedException {
 
             // key is the recommended friend, and value is the list of mutual friends
             final java.util.Map<Long, List<Long>> mutualFriendsRecommendedFriend = new HashMap<Long, List<Long>>();
 
-            for (FriendRecommendation.FriendCountWritable val : values) {
+            for (FriendCountWritable val : values) {
                 final boolean alreadyFriend = (val.mutualFriend == -1);
                 final long currPotentialFriend = val.user;
                 final long mutualFriend = val.mutualFriend;
@@ -154,8 +153,10 @@ public class MapReduce {
         job.setMapperClass(TokenizerMapper.class);
         job.setCombinerClass(IntSumReducer.class);
         job.setReducerClass(IntSumReducer.class);
-        job.setOutputKeyClass(Text.class);
-        job.setOutputValueClass(IntWritable.class);
+        job.setMapOutputKeyClass(LongWritable.class);
+        job.setMapOutputValueClass(FriendCountWritable.class);
+        job.setOutputKeyClass(LongWritable.class);
+        job.setOutputValueClass(Text.class);
         FileInputFormat.addInputPath(job, new Path(args[0]));
         FileOutputFormat.setOutputPath(job, new Path(args[1]));
         System.exit(job.waitForCompletion(true) ? 0 : 1);
