@@ -13,7 +13,7 @@ def save_metric(metric_config, file_name):
     print(f"Saved: {file_name}")
 
 
-def main(instances_ids):
+def main(instances_ids, tg_ids):
     metric_cpu_usage_all_instances = """{
         "metrics": [
     INSTANCE_IDS_PLACEHOLDER
@@ -52,9 +52,9 @@ def main(instances_ids):
     }"""
 
     tg_metric_conf = ''
-    for tg_idx in range(len(instances_ids)):
-        tg_metric_conf += f'[ "AWS/ApplicationELB", "RequestCountPerTarget", "TargetGroup", "{instances_ids[tg_idx]}" ]'
-        if tg_idx < len(instances_ids) - 1:
+    for tg_idx in range(len(tg_ids)):
+        tg_metric_conf += f'[ "AWS/ApplicationELB", "RequestCountPerTarget", "TargetGroup", "{tg_ids[tg_idx]}" ]'
+        if tg_idx < len(tg_ids) - 1:
             tg_metric_conf += ',\n'
 
     metric_requests_per_tg = metric_requests_per_tg.replace('TG_IDS_PLACEHOLDER', tg_metric_conf)

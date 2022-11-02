@@ -1,18 +1,10 @@
 # Sets up a security group. Create instances, target groups and elastic load balancers.
-import boto3
 from botocore.exceptions import ClientError
 import aws_constants
 import get
 import destructors
 import cloudwatch
 import time
-
-# create key pair (probably not necessary)
-# key_name = 'vockey'
-# try:
-#     KEY_PAIR = EC2_CLIENT.create_key_pair(KeyName=key_name)
-# except ClientError:
-#     KEY_PAIR= key_name
 
 USERDATA_SCRIPT = """#!/bin/bash
 apt update && \
@@ -184,8 +176,6 @@ try:
         VpcId=vpc_id
     )
     security_group_id = response['GroupId']
-    # TODO For scripting, we should probably save the security group somewhere -
-    #  in a file (so that it can be used with bash) ?
     print(f'Successfully created security group {security_group_id}')
     sec_group_rules = [
         {'IpProtocol': 'tcp',
@@ -200,7 +190,6 @@ try:
          'FromPort': 443,
          'ToPort': 443,
          'IpRanges': [{'CidrIp': '0.0.0.0/0'}]}
-        # TODO maybe we should add ssh redirection ?
     ]
     data = aws_constants.EC2_CLIENT.authorize_security_group_ingress(GroupId=security_group_id,
                                                                      IpPermissions=sec_group_rules)
@@ -271,14 +260,11 @@ waiter.wait(
 print('LOAD BALANCER IS NOW AVAILABLE')
 
 get.main()
-cloudwatch.main(instance_ids)
+cloudwatch.main(instance_ids, tg_ids)
 
-#TODO to uncomment when we have the metrics analysis
 destructors.delete_load_balancers([elb_arn])
-destructors.terminate_running_instances(instance_ids)
+all_instances = [instance for instance in m4_instances]
+all_instances.extend(t2_instances)
+destructors.terminate_running_instances(instance_ids, all_instances)
 time.sleep(5)  # wait for the instances to be terminated before deleting the target groups
 destructors.delete_target_groups([m4_group_arn, t2_group_arn])
-
-# TODO to uncomment when it works
-# time.sleep(5)  # wait for the target groups to be deleted before deleting the security group
-# destructors.delete_security_groups([security_group_id])

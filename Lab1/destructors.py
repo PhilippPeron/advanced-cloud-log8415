@@ -10,12 +10,13 @@ DESCRIBE_LB_LB_KEY = 'LoadBalancers'
 LB_ARN_DICT_KEY = 'LoadBalancerArn'
 
 
-def terminate_running_instances(instances_ids):
+def terminate_running_instances(instances_ids, all_instances):
     print('STOPPING INSTANCES WITH IDs : ' + str(instances_ids))
     terminate_instances_responses = aws_constants.EC2_CLIENT.terminate_instances(
         InstanceIds=instances_ids,
     )
-    print(terminate_instances_responses)
+    for instance in all_instances:
+        instance.wait_until_terminated()
 
 
 def delete_load_balancers(load_balancer_arn=None):
@@ -52,15 +53,3 @@ def delete_target_groups(target_groups_arn=None):
             TargetGroupArn=target_group_arn
         )
         print('DELETE TARGET GROUP with ARN: ' + target_group_arn)
-
-
-def delete_security_groups(security_groups_ids=None):
-    if security_groups_ids is None:
-        security_groups_ids = []
-
-    for security_group_id in security_groups_ids:
-        aws_constants.EC2_CLIENT.delete_security_group(
-            GroupId=security_group_id
-        )
-        print('DELETE SECURITY GROUP with ID: ' + security_group_id)
-
