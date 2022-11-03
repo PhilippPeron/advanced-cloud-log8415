@@ -27,7 +27,7 @@ echo "PRIVATE_KEY_FILE=$PRIVATE_KEY_FILE"
 chmod 600 "$PRIVATE_KEY_FILE"
 
 # Even though we wait for the instance to be running in python, openssh takes some time to start.
-# We check port 22 every 5s to see if sshd started on our instance, before trying to ssh into it.
+# We check port 22 every 3s to see if sshd started on our instance, before trying to ssh into it.
 SSH_IS_NOT_RUNNING=1
 while [[ $SSH_IS_NOT_RUNNING -eq 1 ]]; do
     # if exit code of nc is 0, ssh started, else if it is 1, ssh is not started.
