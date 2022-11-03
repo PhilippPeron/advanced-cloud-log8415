@@ -136,27 +136,32 @@ def retrieve_instance_ip(instance_id):
     return instance_ip
 
 
-# Create a key pair
-key_name = 'LAB2_KEY'
-private_key_filename = create_private_key_filename(key_name)
-create_key_pair(key_name, private_key_filename)
+def start_friend_recommender_instance():
+    # Create the instance with the key pair
+    instance = create_ec2('m4.large', sg_id, key_name)
+    print(f'Waiting for instance {instance.id} to be running...')
+    instance.wait_until_running()
+    # Get the instance's IP
+    instance_ip = retrieve_instance_ip(instance.id)
 
-# Create a security group
-sg_id = create_security_group()
+    with open('env_variables.txt', 'w+') as f:
+        f.write(f'INSTANCE_IP={instance_ip}\n')
+        f.write(f'PRIVATE_KEY_FILE={private_key_filename}\n')
+    print('Wrote instance\'s IP and private key filename to env_variables.txt')
+    print(f'Instance {instance.id} started. Access it with \'ssh -i {private_key_filename} ubuntu@{instance_ip}\'')
 
-# Create the instance with the key pair
-instance = create_ec2('m4.large', sg_id, key_name)
 
-print(f'Waiting for instance {instance.id} to be running...')
-instance.wait_until_running()
+if __name__ == "__main__":
+    # Create a key pair
+    key_name = 'LAB2_KEY'
+    private_key_filename = create_private_key_filename(key_name)
+    create_key_pair(key_name, private_key_filename)
 
-# Get the instance's IP
-instance_ip = retrieve_instance_ip(instance.id)
+    # Create a security group
+    sg_id = create_security_group()
+    start_friend_recommender_instance()
 
-with open('env_variables.txt', 'w+') as f:
-    f.write(f'INSTANCE_IP={instance_ip}\n')
-    f.write(f'PRIVATE_KEY_FILE={private_key_filename}\n')
-print('Wrote instance\'s IP and private key filename to env_variables.txt')
 
-print(
-    f'Instance {instance.id} started. Access it with \'ssh -i {private_key_filename} ubuntu@{instance_ip}\'')
+
+
+
