@@ -17,8 +17,5 @@ source ~/.profile
 # install spark
 wget https://archive.apache.org/dist/spark/spark-2.0.0/spark-2.0.0-bin-hadoop2.7.tgz
 tar -xzf spark-2.0.0-bin-hadoop2.7.tgz
-mv spark-2.0.0-bin-hadoop2.7 spark
-# sudo apt install python3-pip -y
-# pip install pyspark
-
-
+sudo mv spark-2.0.0-bin-hadoop2.7 /usr/local/spark
+source ~/.profile

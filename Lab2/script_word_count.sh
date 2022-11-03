@@ -55,8 +55,7 @@ done
 ssh -o "StrictHostKeyChecking no" -i "$PRIVATE_KEY_FILE" ubuntu@"$INSTANCE_IP" '
     set -x && \
     git clone https://github.com/PhilippPeron/advanced-cloud-log8415.git source_code && \
-    cd source_code/Lab2/ && \
-    chmod +x install-hadoop-spark.sh && \
-    sh install-hadoop-spark.sh && \
+    chmod +x source_code/Lab2/install-hadoop-spark.sh && \
+    sh source_code/Lab2/install-hadoop-spark.sh && \
     source ~/.profile && \
     '
