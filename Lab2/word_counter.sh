@@ -5,15 +5,15 @@ LOG_FILE='word_count.time'
 sudo mkdir text_files
 cd text_files
 # Download files
-wget https://tinyurl.com/4vxdw3pa
-wget https://tinyurl.com/kh9excea
-wget https://tinyurl.com/dybs9bnk
-wget https://tinyurl.com/datumz6m
-wget https://tinyurl.com/j4j4xdw6
-wget https://tinyurl.com/ym8s5fm4
-wget https://tinyurl.com/2h6a75nk
-wget https://tinyurl.com/vwvram8
-wget https://tinyurl.com/weh83uyn
+sudo wget https://tinyurl.com/4vxdw3pa
+sudo wget https://tinyurl.com/kh9excea
+sudo wget https://tinyurl.com/dybs9bnk
+sudo wget https://tinyurl.com/datumz6m
+sudo wget https://tinyurl.com/j4j4xdw6
+sudo wget https://tinyurl.com/ym8s5fm4
+sudo wget https://tinyurl.com/2h6a75nk
+sudo wget https://tinyurl.com/vwvram8
+sudo wget https://tinyurl.com/weh83uyn
 cd ..
 # Create hdfs folder
 hdfs dfs -mkdir input
