@@ -67,7 +67,17 @@ ssh -o "StrictHostKeyChecking no" -i "$PRIVATE_KEY_FILE" ubuntu@"$INSTANCE_IP" '
     unzip -o TP2-dataset.zip && \
     hdfs dfs -copyFromLocal soc-LiveJournal1Adj.txt input/input.txt && \
     hdfs dfs -ls input && \
-    hadoop jar mapreduce.jar MapReduce input output && \
+    { time hadoop jar mapreduce.jar MapReduce input output; } 2>&1 | tee stats.time && \
     hdfs dfs -ls output && \
-    hdfs dfs -cat output/*
+    hdfs dfs -copyToLocal output/part-r-00000 ./output.txt && \
+    echo "Done!"
 '
+echo "Copying output..." && scp -i "$PRIVATE_KEY_FILE" ubuntu"@$INSTANCE_IP":~/source_code/Lab2/output.txt ubuntu"@$INSTANCE_IP":~/source_code/Lab2/stats.time .
+
+echo "MapReduce elapsed time :" && tail -n 3 stats.time
+echo "Output's first 50 characters : $(head --bytes 50 < output.txt)..."
+
+echo "Deleting the instance..." && activate_venv && python setup_instance.py --kill
+
+echo "MapReduce execution stats saved in stats.time"
+echo "MapReduce output saved locally in output.txt"
