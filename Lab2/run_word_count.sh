@@ -58,4 +58,7 @@ ssh -o "StrictHostKeyChecking no" -i "$PRIVATE_KEY_FILE" ubuntu@"$INSTANCE_IP" '
     chmod +x source_code/Lab2/install-hadoop-spark.sh && \
     sh source_code/Lab2/install-hadoop-spark.sh && \
     source ~/.profile && \
+    chmod +x source_code/Lab2/word_counter.sh && \
+    sh source_code/Lab2/word_counter.sh && \
+
     '
