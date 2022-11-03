@@ -1,6 +1,11 @@
 import boto3
 from botocore.exceptions import ClientError
 from os import path
+import argparse
+
+parser = argparse.ArgumentParser(description='Instance setup.')
+parser.add_argument('--kill', action='store_true', default=False, help='Kill all running instances and exit')
+args = parser.parse_args()
 
 EC2_RESOURCE = boto3.resource('ec2')
 EC2_CLIENT = boto3.client('ec2')
@@ -133,6 +138,8 @@ def retrieve_instance_ip(instance_id):
 
 
 def start_instance():
+    """Starts one instance, with the lab2 configuration.
+    """
     # Create the instance with the key pair
     instance = create_ec2('m4.large', sg_id, key_name)
     print(f'Waiting for instance {instance.id} to be running...')
@@ -147,7 +154,23 @@ def start_instance():
     print(f'Instance {instance.id} started. Access it with \'ssh -i {private_key_filename} ubuntu@{instance_ip}\'')
 
 
+def terminate_all_running_instances():
+    """Terminate all currently running instances.
+    """
+    response = EC2_CLIENT.describe_instances()
+    instances = response['Reservations'][0]['Instances']
+    try:
+        EC2_CLIENT.terminate_instances(InstanceIds=[instance['InstanceId'] for instance in instances])
+    except ClientError as e:
+        print('Failed to terminate the instances.')
+        print(e)
+
+
 if __name__ == "__main__":
+    if args.kill:
+        terminate_all_running_instances()
+        exit(0)
+
     # Create a key pair
     key_name = 'LAB2_KEY'
     private_key_filename = create_private_key_filename(key_name)
@@ -156,8 +179,4 @@ if __name__ == "__main__":
     # Create a security group
     sg_id = create_security_group()
     start_instance()
-
-
-
-
 
