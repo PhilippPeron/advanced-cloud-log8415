@@ -23,6 +23,7 @@ WORD_COUNT_PYSPARK=`sudo find / -name wordcount.py`
 # Copy files into hadoop file system and process input files in text_files directory
 for FILE in `ls text_files/* | cut -d"/" -f2`
 do
+  /usr/local/hadoop-3.3.4/bin/hdfs dfs -mkdir output
   /usr/local/hadoop-3.3.4/bin/hdfs dfs -copyFromLocal "text_files/$FILE" input
   echo  >>LOG_FILE
   echo "$FILE" >>LOG_FILE
