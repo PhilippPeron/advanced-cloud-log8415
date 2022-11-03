@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.*;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
@@ -47,8 +48,7 @@ public class MapReduce {
                     + Long.toString(user) + " mutualFriend: " + Long.toString(mutualFriend);
         }
     }
-    public static class TokenizerMapper
-            extends Mapper<LongWritable, Text, LongWritable, FriendCountWritable>{
+    public static class TokenizerMapper extends Mapper<LongWritable, Text, LongWritable, FriendCountWritable>{
         @Override
         public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
             String[] line = value.toString().split("\t");
@@ -74,8 +74,7 @@ public class MapReduce {
         }
     }
 
-    public static class IntSumReducer
-            extends Reducer<LongWritable, FriendCountWritable, LongWritable, Text> {
+    public static class IntSumReducer extends Reducer<LongWritable, FriendCountWritable, LongWritable, Text> {
         @Override
         public void reduce(LongWritable key, Iterable<FriendCountWritable> values, Context context)
                 throws IOException, InterruptedException {
@@ -151,12 +150,16 @@ public class MapReduce {
         Job job = Job.getInstance(conf, "word count");
         job.setJarByClass(MapReduce.class);
         job.setMapperClass(TokenizerMapper.class);
-        job.setCombinerClass(IntSumReducer.class);
+        // job.setCombinerClass(IntSumReducer.class);
         job.setReducerClass(IntSumReducer.class);
         job.setMapOutputKeyClass(LongWritable.class);
         job.setMapOutputValueClass(FriendCountWritable.class);
         job.setOutputKeyClass(LongWritable.class);
         job.setOutputValueClass(Text.class);
+        
+        FileSystem outFs = new Path(args[1]).getFileSystem(conf);
+        outFs.delete(new Path(args[1]), true);
+
         FileInputFormat.addInputPath(job, new Path(args[0]));
         FileOutputFormat.setOutputPath(job, new Path(args[1]));
         System.exit(job.waitForCompletion(true) ? 0 : 1);
