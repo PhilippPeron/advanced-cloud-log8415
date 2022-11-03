@@ -12,5 +12,8 @@ echo "export PATH=/usr/local/hadoop-3.3.4/bin:$PATH" >> ~/.profile
 echo "export PATH=$HADOOP_HOME/bin:$PATH" >> ~/.profile
 source ~/.profile
 
+# install spark
+sudo apt install python3-pip -y
+pip install pyspark
 
 
