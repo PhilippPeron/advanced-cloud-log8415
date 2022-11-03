@@ -5,6 +5,7 @@ from os import path
 EC2_RESOURCE = boto3.resource('ec2')
 EC2_CLIENT = boto3.client('ec2')
 
+
 def create_ec2(instance_type, sg_id, key_name):
     """Creates an EC2 instance
 
@@ -39,6 +40,7 @@ def create_ec2(instance_type, sg_id, key_name):
     print(f'{instance} is starting')
     return instance
 
+
 def create_security_group():
     """Creates a security group for the lab 2 needs
 
@@ -57,9 +59,9 @@ def create_security_group():
         print(f'Successfully created security group {security_group_id}')
         sec_group_rules = [
             {'IpProtocol': 'tcp',
-            'FromPort': 22,
-            'ToPort': 22,
-            'IpRanges': [{'CidrIp': '0.0.0.0/0'}]},
+             'FromPort': 22,
+             'ToPort': 22,
+             'IpRanges': [{'CidrIp': '0.0.0.0/0'}]},
             # {'IpProtocol': 'tcp',
             # 'FromPort': 80,
             # 'ToPort': 80,
@@ -70,7 +72,7 @@ def create_security_group():
             # 'IpRanges': [{'CidrIp': '0.0.0.0/0'}]}
         ]
         data = EC2_CLIENT.authorize_security_group_ingress(GroupId=security_group_id,
-                                                                        IpPermissions=sec_group_rules)
+                                                           IpPermissions=sec_group_rules)
         print(f'Successfully updated security group rules with : {sec_group_rules}')
         return security_group_id
     except ClientError as e:
@@ -86,6 +88,7 @@ def create_security_group():
             print(e)
             exit(1)
 
+
 def create_private_key_filename(key_name):
     """Generates a filename to save the key pair
 
@@ -96,6 +99,7 @@ def create_private_key_filename(key_name):
         str: Private key filename
     """
     return f'./private_key_{key_name}.pem'
+
 
 def create_key_pair(key_name, private_key_filename):
     """Generates a key pair to access our instance
@@ -114,6 +118,7 @@ def create_key_pair(key_name, private_key_filename):
     with open(private_key_filename, 'w+') as f:
         f.write(response['KeyMaterial'])
     print(f'{private_key_filename} written.')
+
 
 def retrieve_instance_ip(instance_id):
     """Retrieves an instance's public IP
@@ -153,5 +158,5 @@ with open('env_variables.txt', 'w+') as f:
     f.write(f'PRIVATE_KEY_FILE={private_key_filename}\n')
 print('Wrote instance\'s IP and private key filename to env_variables.txt')
 
-print(f'Instance {instance.id} started. Access it with \'ssh -i {private_key_filename} ubuntu@{instance_ip}\'')
-
+print(
+    f'Instance {instance.id} started. Access it with \'ssh -i {private_key_filename} ubuntu@{instance_ip}\'')
