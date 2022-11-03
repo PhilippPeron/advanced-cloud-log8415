@@ -16,14 +16,14 @@ sudo wget https://tinyurl.com/vwvram8
 sudo wget https://tinyurl.com/weh83uyn
 cd ..
 # Create hdfs folder
-hdfs dfs -mkdir input
+/usr/local/hadoop-3.3.4/bin/hdfs dfs -mkdir input
 
 # Retrieve wordcount.py path
 WORD_COUNT_PYSPARK=`sudo find / -name wordcount.py`
 # Copy files into hadoop file system and process input files in text_files directory
-for FILE in `ls text_files/*-00-* | cut -d"/" -f2`
+for FILE in `ls text_files/* | cut -d"/" -f2`
 do
-  hdfs dfs -copyFromLocal "text_files/$FILE" input
+  /usr/local/hadoop-3.3.4/bin/hdfs dfs -copyFromLocal "text_files/$FILE" input
   echo  >>LOG_FILE
   echo "$FILE" >>LOG_FILE
   echo 'Spark:' >>LOG_FILE
@@ -31,12 +31,11 @@ do
   { time python3 "$WORD_COUNT_PYSPARK" "text_files/$FILE"; } 2>&1 | tail -n3 >>LOG_FILE
   echo 'Hadoop:' >>LOG_FILE
   # Run hadoop command
-  { time hadoop jar /usr/local/hadoop-3.3.4/share/hadoop/mapreduce/hadoop-map/reduce-examples-3.3.4.jar wordcount "input/$FILE" output; } 2>&1 | tail -n3 >>LOG_FILE
+  { time /usr/local/hadoop-3.3.4/bin/hadoop jar /usr/local/hadoop-3.3.4/share/hadoop/mapreduce/hadoop-map/reduce-examples-3.3.4.jar wordcount "input/$FILE" output; } 2>&1 | tail -n3 >>LOG_FILE
   echo "" >>LOG_FILE
   # Cleanup output folder
-  hdfs dfs -rm -r output
+  /usr/local/hadoop-3.3.4/bin/hdfs dfs -rm -r output
 done
 
 # Cleanup input folder
-hdfs dfs -rm -r input
-op jar /usr/local/hadoop-3.3.4/share/hadoop/mapreduce/hadoop-map/reduce-examples-3.3.4.jar wordcount input output
+/usr/local/hadoop-3.3.4/bin/hdfs dfs -rm -r input
