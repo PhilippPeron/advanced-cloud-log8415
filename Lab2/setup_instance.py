@@ -52,8 +52,7 @@ def create_security_group():
     try:
         response = EC2_CLIENT.create_security_group(
             GroupName=sec_group_name,
-            Description='Security group for the ec2 instances used in Lab1',
-            # VpcId=vpc_id
+            Description='Security group for the ec2 instances used in Lab1'
         )
         security_group_id = response['GroupId']
         print(f'Successfully created security group {security_group_id}')
@@ -61,15 +60,7 @@ def create_security_group():
             {'IpProtocol': 'tcp',
              'FromPort': 22,
              'ToPort': 22,
-             'IpRanges': [{'CidrIp': '0.0.0.0/0'}]},
-            # {'IpProtocol': 'tcp',
-            # 'FromPort': 80,
-            # 'ToPort': 80,
-            # 'IpRanges': [{'CidrIp': '0.0.0.0/0'}]},
-            # {'IpProtocol': 'tcp',
-            # 'FromPort': 443,
-            # 'ToPort': 443,
-            # 'IpRanges': [{'CidrIp': '0.0.0.0/0'}]}
+             'IpRanges': [{'CidrIp': '0.0.0.0/0'}]}
         ]
         data = EC2_CLIENT.authorize_security_group_ingress(GroupId=security_group_id,
                                                            IpPermissions=sec_group_rules)
@@ -108,10 +99,15 @@ def create_key_pair(key_name, private_key_filename):
         key_name (str): key name
         private_key_filename (str): filename to save the private key to
     """
-    # TODO check if the key already exists distantlx
+    response = EC2_CLIENT.describe_key_pairs()
+    kp = [kp for kp in response['KeyPairs'] if kp['KeyName'] == key_name]
+    if len(kp) > 0 and not path.exists(private_key_filename):
+        print(f'{key_name} already exists distantly, but the private key file has not been downloaded. Either delete the remote key or download the associate private key as {private_key_filename}.')
+        exit(1)
+
     print(f'Creating {private_key_filename}')
     if path.exists(private_key_filename):
-        print(f'Private key {private_key_filename} already exists, use this file.')
+        print(f'Private key {private_key_filename} already exists, using this file.')
         return
 
     response = EC2_CLIENT.create_key_pair(KeyName=key_name)
@@ -160,8 +156,3 @@ if __name__ == "__main__":
     # Create a security group
     sg_id = create_security_group()
     start_friend_recommender_instance()
-
-
-
-
-
