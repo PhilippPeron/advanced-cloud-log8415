@@ -136,7 +136,7 @@ def retrieve_instance_ip(instance_id):
     return instance_ip
 
 
-def start_friend_recommender_instance():
+def start_instance():
     # Create the instance with the key pair
     instance = create_ec2('m4.large', sg_id, key_name)
     print(f'Waiting for instance {instance.id} to be running...')
@@ -159,7 +159,7 @@ if __name__ == "__main__":
 
     # Create a security group
     sg_id = create_security_group()
-    start_friend_recommender_instance()
+    start_instance()
 
 
 
