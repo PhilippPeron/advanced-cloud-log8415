@@ -55,8 +55,8 @@ ssh -o "StrictHostKeyChecking no" -i "$PRIVATE_KEY_FILE" ubuntu@"$INSTANCE_IP" '
     set -x && \
     git clone https://github.com/PhilippPeron/advanced-cloud-log8415.git source_code && \
     cd source_code/Lab2/ && \
-    chmod +x install-hadoop.sh && \
-    sh install-hadoop.sh && \
+    chmod +x install-hadoop-spark.sh && \
+    sh install-hadoop-spark.sh && \
     source ~/.profile && \
     mkdir -p build && cd build && \
     cp ../MapReduce.java . && \
@@ -69,10 +69,12 @@ ssh -o "StrictHostKeyChecking no" -i "$PRIVATE_KEY_FILE" ubuntu@"$INSTANCE_IP" '
     hdfs dfs -ls input && \
     { time hadoop jar mapreduce.jar MapReduce input output; } 2>&1 | tee stats.time && \
     hdfs dfs -ls output && \
-    hdfs dfs -copyToLocal output/part-r-00000 ./output.txt && \
+    hdfs dfs -copyToLocal output/part-r-00000 ./output_people.txt && \
+    chmod +x word_counter.sh && \
+    sh word_counter.sh && \
     echo "Done!"
 '
-echo "Copying output..." && scp -i "$PRIVATE_KEY_FILE" ubuntu"@$INSTANCE_IP":~/source_code/Lab2/output.txt ubuntu"@$INSTANCE_IP":~/source_code/Lab2/stats.time .
+echo "Copying output..." && scp -i "$PRIVATE_KEY_FILE" ubuntu"@$INSTANCE_IP":~/source_code/Lab2/output_people.txt ubuntu"@$INSTANCE_IP":~/source_code/Lab2/stats.time ubuntu"@$INSTANCE_IP":~/source_code/Lab2/HadoopVsSpark.png .
 
 echo "MapReduce elapsed time :" && tail -n 3 stats.time
 echo "Output's first 50 characters : $(head --bytes 50 < output.txt)..."
@@ -80,4 +82,4 @@ echo "Output's first 50 characters : $(head --bytes 50 < output.txt)..."
 echo "Deleting the instance..." && activate_venv && python setup_instance.py --kill
 
 echo "MapReduce execution stats saved in stats.time"
-echo "MapReduce output saved locally in output.txt"
+echo "MapReduce output saved locally in output_people.txt"
