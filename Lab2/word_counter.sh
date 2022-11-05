@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
 
-#install matplotlib to plot the performance graphs
-pip3 install matplotlib
-
 LOG_FILE='word_count.time'
 
 sudo mkdir text_files
@@ -25,7 +22,7 @@ cd ..
 WORD_COUNT_PYSPARK=`sudo find / -name wordcount.py`
 
 # repeat three times to obtain an average
-for i in 1 2 3
+for i in 1 #2 3
 do
 # Copy files into hadoop file system and process input files in text_files directory
   for FILE in `ls text_files/* | cut -d"/" -f2`
@@ -49,4 +46,5 @@ done
 sudo rm -r text_files
 
 #Start the log file processing script
+pip3 install matplotlib
 python3 wordcount_graphs.py

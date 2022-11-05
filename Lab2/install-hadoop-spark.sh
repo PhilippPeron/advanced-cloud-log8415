@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 wget --progress=bar:force:noscroll https://dlcdn.apache.org/hadoop/common/hadoop-3.3.4/hadoop-3.3.4.tar.gz
 echo "Unpacking..."
