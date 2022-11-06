@@ -47,6 +47,3 @@ done
 # Cleanup input and text files folders
 /usr/local/hadoop-3.3.4/bin/hdfs dfs -rm -r input
 sudo rm -r text_files
-
-#Start the log file processing script
-python3 wordcount_graphs.py
