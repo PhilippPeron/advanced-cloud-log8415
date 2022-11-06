@@ -74,7 +74,7 @@ ssh -o "StrictHostKeyChecking no" -i "$PRIVATE_KEY_FILE" ubuntu@"$INSTANCE_IP" '
     sh word_counter.sh && \
     echo "Done!"
 '
-echo "Copying output..." && scp -i "$PRIVATE_KEY_FILE" ubuntu"@$INSTANCE_IP":~/source_code/Lab2/output_people.txt ubuntu"@$INSTANCE_IP":~/source_code/Lab2/stats.time ubuntu"@$INSTANCE_IP":~/source_code/Lab2/HadoopVsSpark.png .
+echo "Copying output..." && scp -i "$PRIVATE_KEY_FILE" ubuntu"@$INSTANCE_IP":~/source_code/Lab2/output.txt ubuntu"@$INSTANCE_IP":~/source_code/Lab2/stats.time .
 
 echo "MapReduce elapsed time :" && tail -n 3 stats.time
 echo "Output's first 50 characters : $(head --bytes 50 < output.txt)..."
