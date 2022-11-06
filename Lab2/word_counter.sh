@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 LOG_FILE='word_count.time'
+touch benchmark_results.txt
 
 sudo mkdir text_files
 cd text_files
@@ -29,13 +30,13 @@ do
   do
     /usr/local/hadoop-3.3.4/bin/hdfs dfs -mkdir output
     /usr/local/hadoop-3.3.4/bin/hdfs dfs -copyFromLocal "text_files/$FILE" input
-    echo "$FILE" >>LOG_FILE
-    echo "Spark" >>LOG_FILE
+    echo "$FILE" >>benchmark_results.txt
+    echo "Spark" >>benchmark_results.txt
     # Run spark command
-    { time python3 "$WORD_COUNT_PYSPARK" "text_files/$FILE"; } 2>&1 | tail -n3 | head -n1 | sed -e 's/\<real\>//g' | tr  -d '[:blank:]'>>LOG_FILE
-    echo "Hadoop" >>LOG_FILE
+    { time python3 "$WORD_COUNT_PYSPARK" "text_files/$FILE"; } 2>&1 | tail -n3 | head -n1 | sed -e 's/\<real\>//g' | tr  -d '[:blank:]'>>benchmark_results.txt
+    echo "Hadoop" >>benchmark_results.txt
     # Run hadoop command
-    { time /usr/local/hadoop-3.3.4/bin/hadoop jar /usr/local/hadoop-3.3.4/share/hadoop/mapreduce/hadoop-map/reduce-examples-3.3.4.jar wordcount "input/$FILE" output; } 2>&1 | tail -n3 | head -n1 | sed -e 's/\<real\>//g' | tr  -d '[:blank:]'>>LOG_FILE
+    { time /usr/local/hadoop-3.3.4/bin/hadoop jar /usr/local/hadoop-3.3.4/share/hadoop/mapreduce/hadoop-map/reduce-examples-3.3.4.jar wordcount "input/$FILE" output; } 2>&1 | tail -n3 | head -n1 | sed -e 's/\<real\>//g' | tr  -d '[:blank:]'>>benchmark_results.txt
     # Cleanup output folder
     /usr/local/hadoop-3.3.4/bin/hdfs dfs -rm -r output
   done
@@ -44,7 +45,3 @@ done
 # Cleanup input and text files folders
 /usr/local/hadoop-3.3.4/bin/hdfs dfs -rm -r input
 sudo rm -r text_files
-
-#Start the log file processing script
-pip3 install matplotlib
-python3 wordcount_graphs.py

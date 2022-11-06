@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 
-file = open('LOG_FILE', 'r')
+file = open('benchmark_results.txt', 'r')
 lines = file.readlines()
 n_lines = len(lines)
 n_tests = int(n_lines/5)
