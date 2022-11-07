@@ -63,7 +63,7 @@ public class MapReduce {
                 for (String friendId : friendsIds) {
                     Long friendIdParsed = Long.parseLong(friendId);
                     friendsIdsParsed.add(friendIdParsed);
-                    context.write(new LongWritable(currUser), new FriendCountWritable(friendIdParsed, -1L));
+                    context.write(new LongWritable(currUser), new FriendCountWritable(friendIdParsed, -1L)); // we put the flag -1 because currUser is alreadyFriend with friendIdParsed
                 }
 
                 for (int i = 0; i < friendsIdsParsed.size(); i++) {
@@ -92,17 +92,21 @@ public class MapReduce {
 
                 final boolean currPotentialFriendAlreadyTreated = mutualFriendsRecommendedFriend.containsKey(currPotentialFriend);
 
-                if (currPotentialFriendAlreadyTreated) {
+                // in the following code we add the mutual friend (between keyId user and currPotentialFriend) to the list of mutual friends
+
+                if (currPotentialFriendAlreadyTreated) { // in this scope the currFriend is already process
                     if (alreadyFriend) {
-                        mutualFriendsRecommendedFriend.put(currPotentialFriend, null);
+                        mutualFriendsRecommendedFriend.put(currPotentialFriend, null); // if we catch the flag then set the list to null because they are already friends
                         continue;
                     }
-                    if (mutualFriendsRecommendedFriend.get(currPotentialFriend) != null) {
+                    if (mutualFriendsRecommendedFriend.get(currPotentialFriend) != null) { // if the list is null it means that we had caught
                         mutualFriendsRecommendedFriend.get(currPotentialFriend).add(mutualFriend);
 
                     }
                     continue;
                 }
+
+                // in this scope we have to init new list
                 if (!alreadyFriend) {
                     mutualFriendsRecommendedFriend.put(currPotentialFriend,
                             new ArrayList<Long>() {{
