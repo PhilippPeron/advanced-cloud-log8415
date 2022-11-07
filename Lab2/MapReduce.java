@@ -17,6 +17,8 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 public class MapReduce {
+    private static final int N_LIMIT = 10;
+
     static public class FriendCountWritable implements Writable {
         public Long user;
         public Long mutualFriend;
@@ -48,7 +50,8 @@ public class MapReduce {
                     + Long.toString(user) + " mutualFriend: " + Long.toString(mutualFriend);
         }
     }
-    public static class TokenizerMapper extends Mapper<LongWritable, Text, LongWritable, FriendCountWritable>{
+
+    public static class TokenizerMapper extends Mapper<LongWritable, Text, LongWritable, FriendCountWritable> {
         @Override
         public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
             String[] line = value.toString().split("\t");
@@ -102,7 +105,9 @@ public class MapReduce {
                 }
                 if (!alreadyFriend) {
                     mutualFriendsRecommendedFriend.put(currPotentialFriend,
-                            new ArrayList<Long>() {{add(mutualFriend);}}
+                            new ArrayList<Long>() {{
+                                add(mutualFriend);
+                            }}
                     );
                 } else {
                     mutualFriendsRecommendedFriend.put(currPotentialFriend, null);
@@ -132,8 +137,10 @@ public class MapReduce {
             }
 
             int i = 0;
+            int N = 10;
             String output = "";
             for (java.util.Map.Entry<Long, List<Long>> entry : sortedMutualFriends.entrySet()) {
+                if (i == N_LIMIT) break;
                 if (i == 0) {
                     output = entry.getKey().toString();
                 } else {
@@ -156,7 +163,7 @@ public class MapReduce {
         job.setMapOutputValueClass(FriendCountWritable.class);
         job.setOutputKeyClass(LongWritable.class);
         job.setOutputValueClass(Text.class);
-        
+
         FileSystem outFs = new Path(args[1]).getFileSystem(conf);
         outFs.delete(new Path(args[1]), true);
 
