@@ -105,6 +105,12 @@ while [[ $SSH_IS_NOT_RUNNING -eq 1 ]]; do
     fi
 done
 
+# What is done here :
+#    - Clone our public repo that contains our MapReduce algorithm, the dataset, and the hadoop installation script
+#    - Install hadoop and spark and configure them properly
+#    - Install matplotlib
+#    - Run our word counter benchmark
+#    - Run our benchmark processing script
 ssh -o "StrictHostKeyChecking no" -i "$PRIVATE_KEY_FILE" ubuntu@"$INSTANCE_IP" '
     set -x && \
     git clone https://github.com/PhilippPeron/advanced-cloud-log8415.git source_code && \
@@ -119,6 +125,8 @@ ssh -o "StrictHostKeyChecking no" -i "$PRIVATE_KEY_FILE" ubuntu@"$INSTANCE_IP" '
     python3 wordcount_graphs.py && \
     echo "Done!"
 '
+#Copy results log and benchmark graph
 echo "Copying output..." && scp -i "$PRIVATE_KEY_FILE" ubuntu"@$INSTANCE_IP":~/source_code/Lab2/benchmark_results.txt .
 echo "Copying output..." && scp -i "$PRIVATE_KEY_FILE" ubuntu"@$INSTANCE_IP":~/source_code/Lab2/HadoopVsSpark.png .
+#Terminate instance 
 echo "Deleting the instance..." && activate_venv && python setup_instance.py --kill
