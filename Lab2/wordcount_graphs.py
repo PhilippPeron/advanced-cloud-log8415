@@ -13,13 +13,9 @@ instances = 0
 for i in range(n_tests):
     #format the data that will be used to create graphs
     key = lines[i*5].replace("\n","")
-    spark_minutes = lines[i*5+2].replace("\n","").split("m")
-    spark_minutes[1]=spark_minutes[1].replace("s","")
-    spark_seconds = float(spark_minutes[0])*60+float(spark_minutes[1])
+    spark_seconds = float(lines[i*5+2].replace("\n",""))
+    hadoop_seconds = float(lines[i*5+4].replace("\n",""))
 
-    hadoop_minutes = lines[i*5+4].replace("\n","").split("m")
-    hadoop_minutes[1]=hadoop_minutes[1].replace("s","")
-    hadoop_seconds = float(hadoop_minutes[0])*60+float(hadoop_minutes[1])
     if key in datasets:
         instances += 1
         spark_times[i%9]+=spark_seconds

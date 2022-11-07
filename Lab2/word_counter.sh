@@ -20,7 +20,7 @@ cd ..
 /usr/local/hadoop-3.3.4/bin/hdfs dfs -mkdir input
 
 # Retrieve wordcount.py path
-WORD_COUNT_PYSPARK=`sudo find / -name wordcount.py`
+WORD_COUNT_PYSPARK=$(sudo find / -xdev -name wordcount.py)
 
 # repeat three times to obtain an average
 for i in 1 #2 3
@@ -33,10 +33,10 @@ do
     echo "$FILE" >>benchmark_results.txt
     echo "Spark" >>benchmark_results.txt
     # Run spark command
-    { time python3 "$WORD_COUNT_PYSPARK" "text_files/$FILE"; } 2>&1 | tail -n3 | head -n1 | sed -e 's/\<real\>//g' | tr  -d '[:blank:]'>>benchmark_results.txt
+    { /usr/bin/time -q -f "%e" python3 "$WORD_COUNT_PYSPARK" "text_files/$FILE"; } 2>&1 | tail -n1 >>benchmark_results.txt
     echo "Hadoop" >>benchmark_results.txt
     # Run hadoop command
-    { time /usr/local/hadoop-3.3.4/bin/hadoop jar /usr/local/hadoop-3.3.4/share/hadoop/mapreduce/hadoop-map/reduce-examples-3.3.4.jar wordcount "input/$FILE" output; } 2>&1 | tail -n3 | head -n1 | sed -e 's/\<real\>//g' | tr  -d '[:blank:]'>>benchmark_results.txt
+    { /usr/bin/time -q -f "%e" /usr/local/hadoop-3.3.4/bin/hadoop jar /usr/local/hadoop-3.3.4/share/hadoop/mapreduce/hadoop-map/reduce-examples-3.3.4.jar wordcount "input/$FILE" output; } 2>&1 | tail -n1 >>benchmark_results.txt
     # Cleanup output folder
     /usr/local/hadoop-3.3.4/bin/hdfs dfs -rm -r output
   done
