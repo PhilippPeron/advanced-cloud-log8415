@@ -55,8 +55,8 @@ ssh -o "StrictHostKeyChecking no" -i "$PRIVATE_KEY_FILE" ubuntu@"$INSTANCE_IP" '
     set -x && \
     git clone https://github.com/PhilippPeron/advanced-cloud-log8415.git source_code && \
     cd source_code/Lab2/ && \
-    chmod +x install-hadoop-spark.sh && \
-    sh install-hadoop-spark.sh && \
+    chmod +x install-hadoop.sh && \
+    sh install-hadoop.sh && \
     source ~/.profile && \
     mkdir -p build && cd build && \
     cp ../MapReduce.java . && \
@@ -70,8 +70,6 @@ ssh -o "StrictHostKeyChecking no" -i "$PRIVATE_KEY_FILE" ubuntu@"$INSTANCE_IP" '
     { time hadoop jar mapreduce.jar MapReduce input output; } 2>&1 | tee stats.time && \
     hdfs dfs -ls output && \
     hdfs dfs -copyToLocal output/part-r-00000 ./output.txt && \
-    chmod +x word_counter.sh && \
-    sh word_counter.sh && \
     echo "Done!"
 '
 echo "Copying output..." && scp -i "$PRIVATE_KEY_FILE" ubuntu"@$INSTANCE_IP":~/source_code/Lab2/output.txt ubuntu"@$INSTANCE_IP":~/source_code/Lab2/stats.time .
@@ -113,21 +111,14 @@ ssh -o "StrictHostKeyChecking no" -i "$PRIVATE_KEY_FILE" ubuntu@"$INSTANCE_IP" '
     cd source_code/Lab2/ && \
     chmod +x install-hadoop-spark.sh && \
     sh install-hadoop-spark.sh && \
-    pip install matplotlib && \
+    sudo apt install -y python3-pip && \
+    pip3 install matplotlib && \
     source ~/.profile && \
     chmod +x word_counter.sh && \
     sh word_counter.sh && \
-    echo "Done!"
-'
-
-echo "Copying output..." && scp -i ubuntu"@$INSTANCE_IP":~/source_code/Lab2/benchmark_results.txt .
-
-ssh -o "StrictHostKeyChecking no" -i "$PRIVATE_KEY_FILE" ubuntu@"$INSTANCE_IP" '
-    set -x && \
-    cd source_code/Lab2/ && \
     python3 wordcount_graphs.py && \
     echo "Done!"
 '
-
-echo "Copying output..." && scp -i ubuntu"@$INSTANCE_IP":~/source_code/Lab2/HadoopVsSpark.png .
+echo "Copying output..." && scp -i "$PRIVATE_KEY_FILE" ubuntu"@$INSTANCE_IP":~/source_code/Lab2/benchmark_results.txt .
+echo "Copying output..." && scp -i "$PRIVATE_KEY_FILE" ubuntu"@$INSTANCE_IP":~/source_code/Lab2/HadoopVsSpark.png .
 echo "Deleting the instance..." && activate_venv && python setup_instance.py --kill

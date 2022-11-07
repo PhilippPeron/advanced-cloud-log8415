@@ -23,7 +23,7 @@ cd ..
 WORD_COUNT_PYSPARK=$(sudo find / -xdev -name wordcount.py)
 
 # repeat three times to obtain an average
-for i in 1 #2 3
+for i in 1 2 3
 do
 # Copy files into hadoop file system and process input files in text_files directory
   for FILE in `ls text_files/* | cut -d"/" -f2`
